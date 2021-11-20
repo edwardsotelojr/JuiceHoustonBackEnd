@@ -2,6 +2,10 @@ const Order = require("../models/Order");
 const Drink = require("../models/Drink");
 const mongoose = require("mongoose");
 const { json } = require("body-parser");
+const { getDrink } = require("./drink");
+const Stripe = require('stripe');
+const stripe = Stripe('pk_test_51JdrbbJhLWcBt73zLaa0UNkmKAAonyh9sRyrmkaMUgufzOeuvL4Vu9cNJcfdGykBSxkQPJOWkICvYoqw3r7q0AzD00Trf0E3aP');
+
 exports.getIndex = async (req, res) => {
   const order = await Order.find((data) => data);
 
@@ -49,9 +53,7 @@ exports.placeOrder = async (req, res) => {
   order.save(function (err, result) {
     if (err) {
       console.log(err);
-      return res
-      .status(200)
-      .json({ err });  
+      return res.status(500).json({ err });
     } else {
       console.log("result: ", result);
       for (var j = 0; j < req.body.amountOfDrinks; j++) {
@@ -60,17 +62,24 @@ exports.placeOrder = async (req, res) => {
         drink.save(function (err, drinkSaved) {
           if (err) {
             console.log(err);
-            return res
-                .status(200)
-                .json({ err });   
+            
+            /* const session = await stripe.checkout.sessions.create({
 
+                  payment_method_types: [
+                    'card',
+                  ],
+                  mode: 'payment',
+                  success_url: `${YOUR_DOMAIN}?success=true`,
+                  cancel_url: `${YOUR_DOMAIN}?canceled=true`,
+                });
+             */
+            
+            return res.status(200).json({ err });
           } else {
             console.log("drink: ", drinkSaved);
-            if(j == 2){
-                return res
-                .status(500)
-                .json({ order });   
-                     }
+            if (j == 2) {
+              return res.status(200).json({ order });
+            }
           }
         });
       }
@@ -78,21 +87,42 @@ exports.placeOrder = async (req, res) => {
   });
 };
 
+async function getDrinkk(drinkId) {
+  const idd = new mongoose.Types.ObjectId(drinkId);
+  console.log(new Date)
+  await Drink.findById(idd, function (err, docs) {
+    if (err) {
+      return { err };
+    }
+    console.log("docs", docs, " " , new Date);
+    return docs;
+  }); 
+};
+
 exports.getUserOrders = async (req, res) => {
-    var userId = req.query.user;
-    console.log(userId)
-    console.log(new mongoose.Types.ObjectId(userId))
-    Order.estimatedDocumentCount(function (err, docs) {
-        if(err){
-            console.log(err);
-            return;
-        }
-        console.log(docs)
-    })
-    Order.find({user: new mongoose.Types.ObjectId(userId)}, function (err, docs) {
-        if(err){
-            return res.status(500).json({err})
-        }
-        return res.status(200).json(docs)
-    })
-  };
+  var userId = req.query.user;
+  //console.log(userId)
+  //console.log(new mongoose.Types.ObjectId(userId))
+  Order.estimatedDocumentCount(function (err, docs) {
+    if (err) {
+      console.log(err);
+      return;
+    } 
+    console.log(docs);
+  });
+  Order.find(
+    { user: new mongoose.Types.ObjectId(userId) },
+    async function (err, docs) {
+      if (err) {
+        return res.status(500).json({ err });
+      }
+      //console.log(docs)
+      docs[0].drinks.forEach(async (d, i) => {
+        const drink = await getDrinkk(d)
+        docs[0].drinks[i] = drink
+      })
+        console.log("jere");
+        return res.status(200).json(docs);
+    }
+  );
+};

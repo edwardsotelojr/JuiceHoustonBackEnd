@@ -1,14 +1,14 @@
 
 const {MONGO_URI} = require('./keys.js');
 const routes = require("./routes/");
+const bodyParser = require("body-parser")
 const express = require("express");
-const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const app = express();
 const PORT = 8000;
 const passport = require("passport");
 const cors = require('cors')
-
+const dotenv = require('dotenv').config()
 app.use(cors())
 app.use(
   bodyParser.urlencoded({

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true
+        required: true,
     },
     email: {
         type: String,
@@ -36,6 +36,19 @@ const userSchema = new mongoose.Schema({
     instructions: {
         type: String,
         required: false
+    },
+    verificationCode: {
+        type: Number,
+        required: true
+    },
+    verified: {
+        type: Boolean,
+        required: false,
+        default: false
+    },
+    verificationAttempt: {
+        type: Number,
+        default: 0
     },
     order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' },
     drink: { type: mongoose.Schema.Types.ObjectId, ref: 'Drink'}
