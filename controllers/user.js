@@ -22,7 +22,7 @@ exports.verify = async(req, res) => {
         User.updateOne({email: user.email}, {$set: {verified: true, verificationAttempt: 0}})
         .then(()=> res.status(200).json({msg: "pin matched"}))
       }
-      else{
+      else{ 
         let verificationAttemptt = parseInt(user.verificationAttempt) + 1
         console.log(verificationAttemptt)
         console.log("code != pin")
