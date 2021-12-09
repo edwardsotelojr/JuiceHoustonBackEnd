@@ -5,8 +5,8 @@ const bcrypt = require("bcrypt");
 const Stripe = require('stripe');
 const stripe = Stripe('sk_test_51JdrbbJhLWcBt73zBQd9s8PqqVI6bEwXxQtYvhQ76RRFQbzLpp8rWsgXCFAA6S9yVz4XghTjvbmk30cwfiSOcyrV008BHc9z1w');
 require('dotenv').config();
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
+const accountSid = "ACc4099ac76cef0373dfbba65d3c304547" //process.env.TWILIO_ACCOUNT_SID;
+const authToken = "8a409252e7c3b76522942a18a329c7ed"//process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER
 const client = require('twilio')(accountSid, authToken);
 
@@ -26,26 +26,24 @@ exports.verify = async(req, res) => {
         let verificationAttemptt = parseInt(user.verificationAttempt) + 1
         console.log(verificationAttemptt)
         console.log("code != pin")
-        if(user.verificationAttempt == 2){ //delete user 
+        if(user.verificationAttempt == 2){ //delete user if 
           User.deleteOne({email: userEmail},function(err){
             if(err)
             {
-                res.send(err);
+                res.json({err});
             }
             else{
-                res.send("deleted");
+                res.json({msg: "deleted"});
             }})
           }
         User.updateOne({email: user.email}, {$set: {verified: false, verificationAttempt: verificationAttemptt}})
-        .then(() => res.send("error"))
+        .then(user => res.json({"Wrong": true, "attemptsLeft": 2-verificationAttemptt}))
 
-      }
+      } 
     }
   })
+  .catch(err => res.json(err))
 }
-
-const emailRegexp =
-  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 exports.login = async (req, res) => {
   console.log("entered login() controller");
@@ -53,7 +51,11 @@ exports.login = async (req, res) => {
   User.findOne({ email: email }).then((user) => {
     if (user === null) {
       res.status(400).json({ msg: "invalid email" });
-    } else {
+    } 
+    else if(user.verified == false){
+      res.status(400).json({ msg: "user not verified" });
+    }
+    else {
       bcrypt.compare(password, user.password).then((isMatch) => {
         if (isMatch) {
           // User matched
@@ -86,12 +88,19 @@ exports.login = async (req, res) => {
 };
 
 getVerificationCode = () => {
-  return 34;
-}
+  let fourCode = []  
+  let code = ""
 
+  for(let i = 0; i < 4; i++){
+    fourCode.push(Math.floor(Math.random() * 9) + 1)
+    code = code + fourCode[i].toString()
+  }
+  console.log(parseInt(code))
+  return parseInt(code);
+}
 exports.signup = async (req, res) => {
   const { email, name, password, phone, address, zipcode, gatecode,
-      suiteNumber, instructions, agreement } = req.body
+      suiteNumber, instructions, termsOfAgreement } = req.body
 
   User.findOne({email: email})
   .then(user => {
@@ -109,7 +118,8 @@ exports.signup = async (req, res) => {
       gatecode: gatecode,
       suiteNumber: suiteNumber,
       instructions: instructions,
-      verificationCode: vCode
+      verificationCode: vCode,
+      termsOfAgreement: termsOfAgreement
     });
     bcrypt.genSalt(10, (err, salt) => {
       bcrypt.hash(newUser.password, salt, (err, hash) => {
@@ -117,16 +127,15 @@ exports.signup = async (req, res) => {
         newUser.password = hash;
         newUser.save()
         .then(user => {
-          let body = "Thank you for signing up with Juice Houston! Your code is " + String(34)
+          let body = "Thank you for signing up with Juice Houston! Your code is " + vCode
           client.messages
-             .create({to: user.phone, from: twilioPhoneNumber, body: body})
-             .then(message => console.log(message.sid));
-          res.json(user)})
-        .catch(err => console.log(err));
+             .create({to: user.phone.toString(), from: twilioPhoneNumber, body: body})
+             .then(message => {res.json(user); console.log("sid: " + message.sid)})
+             .catch(err => {res.json(err)});
+              })
+        .catch(err => {console.log("err: " + err); res.json(err)});
       });
     });
-    
- 
   });
 };
 

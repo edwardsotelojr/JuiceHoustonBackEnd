@@ -3,6 +3,7 @@ const userSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
+        maxLength: 15
     },
     email: {
         type: String,
@@ -19,7 +20,7 @@ const userSchema = new mongoose.Schema({
     },
     zipcode: {
         type: Number,
-        required: true
+        required: true,
     },
     phone: {
         type: Number,
@@ -49,6 +50,10 @@ const userSchema = new mongoose.Schema({
     verificationAttempt: {
         type: Number,
         default: 0
+    },
+    termsOfAgreement: {
+        type: Boolean,
+        required: true
     },
     order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' },
     drink: { type: mongoose.Schema.Types.ObjectId, ref: 'Drink'}

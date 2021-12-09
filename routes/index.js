@@ -7,7 +7,6 @@ router.post('/login', login);
 router.post('/signup', signup);
 router.patch('/verify', verify);
 router.patch('/edit/:_id', edit);
-
 router.post('/placeOrder', placeOrder);
 router.get('/orders/', getUserOrders);
 
