@@ -8,16 +8,16 @@ const drinkSchema = mongoose.Schema(
       required: true,
     },
     ingredients: {
-      type: Array,
-      required: true,
-    },
-    quantityOfIngredients: {
-      type: Array,
+      type: Object,
       required: true,
     },
     price: {
       type: Number,
       required: true,
+    },
+    nutritionalFacts: {
+      type: Object,
+      required: false,
     },
     user: {
       type: Schema.Types.ObjectId,

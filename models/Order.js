@@ -14,10 +14,6 @@ const orderSchema = mongoose.Schema({
          type: Number,
          required: true
     },
-    cupOption: {
-        type: String,
-        required: true
-    },
     address: {
         type: String,
         required: true
@@ -34,9 +30,17 @@ const orderSchema = mongoose.Schema({
         type: String,
         required: false
     },
+    sizeOfOrder: {
+        type: Number,
+        required: true
+    },
     instructions:{
         type: String,
         required: false
+    },
+    agreement:{
+        type: Boolean,
+        required: true
     },
     drinks: [{type: Schema.Types.ObjectId, ref: 'Drink'
 }],

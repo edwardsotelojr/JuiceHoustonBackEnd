@@ -2,48 +2,59 @@ const { JWT_SECRET } = require("../keys.js");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const Stripe = require('stripe');
-const stripe = Stripe('sk_test_51JdrbbJhLWcBt73zBQd9s8PqqVI6bEwXxQtYvhQ76RRFQbzLpp8rWsgXCFAA6S9yVz4XghTjvbmk30cwfiSOcyrV008BHc9z1w');
-require('dotenv').config();
-const accountSid = "ACc4099ac76cef0373dfbba65d3c304547" //process.env.TWILIO_ACCOUNT_SID;
-const authToken = "8a409252e7c3b76522942a18a329c7ed"//process.env.TWILIO_AUTH_TOKEN;
+const Stripe = require("stripe");
+const stripe = Stripe(
+  "sk_test_51JdrbbJhLWcBt73zBQd9s8PqqVI6bEwXxQtYvhQ76RRFQbzLpp8rWsgXCFAA6S9yVz4XghTjvbmk30cwfiSOcyrV008BHc9z1w"
+);
+require("dotenv").config();
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER
-const client = require('twilio')(accountSid, authToken);
+const client = require("twilio")(accountSid, authToken);
 
-exports.verify = async(req, res) => {
+exports.verify = async (req, res) => {
   let pin = req.body.pin;
   let userEmail = req.body.userEmail;
-  User.findOne({email: userEmail})
-  .then(user => {
-    if(user){
-      let code = user.verificationCode
-      if(code == pin){
-        console.log("code = pin")
-        User.updateOne({email: user.email}, {$set: {verified: true, verificationAttempt: 0}})
-        .then(()=> res.status(200).json({msg: "pin matched"}))
-      }
-      else{ 
-        let verificationAttemptt = parseInt(user.verificationAttempt) + 1
-        console.log(verificationAttemptt)
-        console.log("code != pin")
-        if(user.verificationAttempt == 2){ //delete user if 
-          User.deleteOne({email: userEmail},function(err){
-            if(err)
-            {
-                res.json({err});
-            }
-            else{
-                res.json({msg: "deleted"});
-            }})
+  User.findOne({ email: userEmail })
+    .then((user) => {
+      if (user) {
+        let code = user.verificationCode;
+        if (code == pin) {
+          console.log("code = pin");
+          User.updateOne(
+            { email: user.email },
+            { $set: { verified: true, verificationAttempt: 0 } }
+          ).then(() => res.status(200).json({ msg: "pin matched" }));
+        } else {
+          let verificationAttemptt = parseInt(user.verificationAttempt) + 1;
+          console.log(verificationAttemptt);
+          console.log("code != pin");
+          if (user.verificationAttempt == 2) {
+            //delete user if
+            User.deleteOne({ email: userEmail }, function (err) {
+              if (err) {
+                res.json({ msg: "error to delete user", err });
+              } else {
+                res.json({ msg: "deleted" });
+              }
+            });
           }
-        User.updateOne({email: user.email}, {$set: {verified: false, verificationAttempt: verificationAttemptt}})
-        .then(user => res.json({"Wrong": true, "attemptsLeft": 2-verificationAttemptt}))
-
-      } 
-    }
-  })
-  .catch(err => res.json(err))
-}
+          User.updateOne(
+            { email: user.email },
+            {
+              $set: {
+                verified: false,
+                verificationAttempt: verificationAttemptt,
+              },
+            }
+          ).then((user) =>
+            res.json({ msg: "Wrong", attemptsLeft: 2 - verificationAttemptt })
+          );
+        }
+      }
+    })
+    .catch((err) => res.json({ msg: "error finding user", err }));
+};
 
 exports.login = async (req, res) => {
   console.log("entered login() controller");
@@ -51,17 +62,15 @@ exports.login = async (req, res) => {
   User.findOne({ email: email }).then((user) => {
     if (user === null) {
       res.status(400).json({ msg: "invalid email" });
-    } 
-    else if(user.verified == false){
+    } else if (user.verified == false) {
       res.status(400).json({ msg: "user not verified" });
-    }
-    else {
+    } else {
       bcrypt.compare(password, user.password).then((isMatch) => {
         if (isMatch) {
           // User matched
           // Create JWT Payload
           const payload = {
-            user
+            user,
           };
           // Sign token
           jwt.sign(
@@ -74,13 +83,12 @@ exports.login = async (req, res) => {
               res.json({
                 success: true,
                 token: "Bearer " + token,
+                user: user
               });
             }
           );
         } else {
-          return res 
-            .status(400)
-            .json({ msg: "Password incorrect" });
+          return res.status(400).json({ msg: "Password incorrect" });
         }
       });
     }
@@ -88,73 +96,98 @@ exports.login = async (req, res) => {
 };
 
 getVerificationCode = () => {
-  let fourCode = []  
-  let code = ""
+  let fourCode = [];
+  let code = "";
 
-  for(let i = 0; i < 4; i++){
-    fourCode.push(Math.floor(Math.random() * 9) + 1)
-    code = code + fourCode[i].toString()
+  for (let i = 0; i < 4; i++) {
+    fourCode.push(Math.floor(Math.random() * 9) + 1);
+    code = code + fourCode[i].toString();
   }
-  console.log(parseInt(code))
+  console.log(parseInt(code));
   return parseInt(code);
-}
+};
 exports.signup = async (req, res) => {
-  const { email, name, password, phone, address, zipcode, gatecode,
-      suiteNumber, instructions, termsOfAgreement } = req.body
+  const {
+    email,
+    name,
+    password,
+    phone,
+    address,
+    zipcode,
+    gatecode,
+    suiteNumber,
+    instructions,
+    termsOfAgreement,
+  } = req.body;
 
-  User.findOne({email: email})
-  .then(user => {
-    if(user){
-      return res.status(400).json({error: "email already exists"});
+  User.findOne({ email: email }).then((user) => {
+    if (user) {
+      return res.status(400).json({ error: "email already exists" });
     }
-    const vCode = getVerificationCode()
+    const vCode = getVerificationCode();
     const newUser = new User({
       email: email,
       name: name,
       password: password,
-      phone: phone, 
+      phone: phone,
       address: address,
       zipcode: zipcode,
       gatecode: gatecode,
       suiteNumber: suiteNumber,
       instructions: instructions,
       verificationCode: vCode,
-      termsOfAgreement: termsOfAgreement
+      termsOfAgreement: termsOfAgreement,
     });
     bcrypt.genSalt(10, (err, salt) => {
       bcrypt.hash(newUser.password, salt, (err, hash) => {
-        if(err) throw err;
+        if (err) throw err;
         newUser.password = hash;
-        newUser.save()
-        .then(user => {
-          let body = "Thank you for signing up with Juice Houston! Your code is " + vCode
-          client.messages
-             .create({to: user.phone.toString(), from: twilioPhoneNumber, body: body})
-             .then(message => {res.json(user); console.log("sid: " + message.sid)})
-             .catch(err => {res.json(err)});
+        let body =
+          "Thank you for signing up with Juice Houston! Your code is " + vCode;
+        client.messages
+          .create({
+            to: phone.toString(),
+            from: "8787896566",
+            body: body,
+          })
+          .then((message) => {
+            console.log("sid: " + message.sid);
+            newUser
+              .save()
+              .then((user) => {
+                res.json({ msg: "success", user });
               })
-        .catch(err => {console.log("err: " + err); res.json(err)});
+              .catch((err) => {
+                console.log("err: " + err);
+                res.json({ msg: "error", err });
+              });
+          })
+          .catch((err) => {
+            console.log("err: " + err);
+            res.json({ msg: "error", err: err.Error });
+          });
       });
     });
   });
 };
 
-exports.edit = async (req, res) =>{
+exports.edit = async (req, res) => {
   const { _id } = req.params;
 
-  User.findOneAndUpdate({_id: _id},
-     {"$set": req.body
-    },{ new: true }, (err, updatedUser) => 
-      {
-        if(err){
-          console.log('err: ', err)
-        }
-        else if(updatedUser) {
+  User.findOneAndUpdate(
+    { _id: _id },
+    { $set: req.body },
+    { new: true },
+    (err, updatedUser) => {
+      if (err) {
+        console.log("err: ", err);
+      } else if (updatedUser) {
         console.log(`Successfully updated document: ${updatedUser}.`);
         res.send(updatedUser);
-        }
-      })
+      }
     }
+  );
+};
 /* 
 const signup = async (req, res) => {
   console.log(req)

@@ -6,6 +6,17 @@ const { getDrink } = require("./drink");
 const Stripe = require('stripe');
 const stripe = Stripe('pk_test_51JdrbbJhLWcBt73zLaa0UNkmKAAonyh9sRyrmkaMUgufzOeuvL4Vu9cNJcfdGykBSxkQPJOWkICvYoqw3r7q0AzD00Trf0E3aP');
 
+const nodemailer = require('nodemailer');
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'juicedhouston@gmail.com',
+    pass: 'fytqom-jiWdeh-cosxu6',
+  },
+});
+transporter.verify().then(console.log).catch(console.error);
+
+
 exports.getIndex = async (req, res) => {
   const order = await Order.find((data) => data);
 
@@ -23,11 +34,12 @@ exports.getIndex = async (req, res) => {
 
 exports.placeOrder = async (req, res) => {
   var drinks = [];
-  for (var i = 0; i < req.body.amountOfDrinks; i++) {
-    var drink = new Drink({
+  var drink;
+  for (var i = 0; i < req.body.sizeOfOrder; i++) {
+    drink = new Drink({
       _id: new mongoose.Types.ObjectId(),
       ingredients: req.body.drinks[i].ingredients,
-      quantityOfIngredients: req.body.drinks[i].quantityOfIngredients,
+      nutritionalFacts: req.body.drinks[i].nutritionalFacts,
       deliveryDate: req.body.drinks[i].deliveryDate,
       color: req.body.drinks[i].color,
       price: req.body.drinks[i].price,
@@ -46,8 +58,8 @@ exports.placeOrder = async (req, res) => {
     suiteNumber: req.body.suiteNumber,
     instructions: req.body.instructions,
     totalCost: req.body.totalCost,
-    cupOption: req.body.cupOption,
-    amountOfDrinks: req.body.amountOfDrinks,
+    sizeOfOrder: req.body.sizeOfOrder,
+    agreement: req.body.agreement,
     drinks: drinks,
   });
   order.save(function (err, result) {
@@ -56,13 +68,12 @@ exports.placeOrder = async (req, res) => {
       return res.status(500).json({ err });
     } else {
       console.log("result: ", result);
-      for (var j = 0; j < req.body.amountOfDrinks; j++) {
+      for (var j = 0; j < req.body.sizeOfOrder; j++) {
         drinks[j].order = order._id;
         var drink = new Drink(drinks[j]);
         drink.save(function (err, drinkSaved) {
           if (err) {
             console.log(err);
-            
             /* const session = await stripe.checkout.sessions.create({
 
                   payment_method_types: [
@@ -73,16 +84,21 @@ exports.placeOrder = async (req, res) => {
                   cancel_url: `${YOUR_DOMAIN}?canceled=true`,
                 });
              */
-            
             return res.status(200).json({ err });
-          } else {
-            console.log("drink: ", drinkSaved);
-            if (j == 2) {
-              return res.status(200).json({ order });
-            }
           }
         });
       }
+      transporter.sendMail({
+        from: '"Edward" <juicedhouston@gmail.com>', // sender address
+        to: req.body.email, // list of receivers
+        subject: "Juice Houston Reciept", // Subject line
+        text: "Thank you!\n\n ", // plain text body
+        html: "<b>There is a new article. It's about sending emails, check it out!</b>", // html body
+      }).then(info => {
+        console.log({info});
+      }).catch(console.error);
+      return res.status(200).json({ "result": "success" });
+
     }
   });
 };
