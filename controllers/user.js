@@ -13,48 +13,85 @@ const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER
 const client = require("twilio")(accountSid, authToken);
 
 exports.verify = async (req, res) => {
-  let pin = req.body.pin;
+  let pin = parseInt(req.body.pin);
   let userEmail = req.body.userEmail;
+  var userPin;
+  console.log("here")
   User.findOne({ email: userEmail })
     .then((user) => {
       if (user) {
-        let code = user.verificationCode;
-        if (code == pin) {
+       userPin = user.verificationCode;
+       console.log("founded user", pin, userPin)
+        if(userPin == pin) {
           console.log("code = pin");
           User.updateOne(
             { email: user.email },
             { $set: { verified: true, verificationAttempt: 0 } }
-          ).then(() => res.status(200).json({ msg: "pin matched" }));
-        } else {
+          ).then(() => {
+          var userr = user
+          delete userr.verified
+          delete userr.verificationAttempt
+          jwt.sign({userr}, JWT_SECRET,
+            {
+              expiresIn: 31556925
+            },
+            (err, token) => {
+              res.json({
+                success: true,
+                msg: "Pin matched",
+                token: token,
+                user: userr
+              });
+            })})
+       }  
+        else{ // pin is not a match
+          console.log("no match")
           let verificationAttemptt = parseInt(user.verificationAttempt) + 1;
-          console.log(verificationAttemptt);
-          console.log("code != pin");
           if (user.verificationAttempt == 2) {
-            //delete user if
             User.deleteOne({ email: userEmail }, function (err) {
               if (err) {
                 res.json({ msg: "error to delete user", err });
               } else {
-                res.json({ msg: "deleted" });
-              }
-            });
-          }
-          User.updateOne(
-            { email: user.email },
-            {
-              $set: {
-                verified: false,
-                verificationAttempt: verificationAttemptt,
+                res.json({ msg: "user is deleted." });
+              }}
+            );
+          }else {
+            console.log(verificationAttemptt)
+            User.updateOne(
+              { "email": user.email },
+              {
+                $set: {
+                  verified: false,
+                  verificationAttempt: verificationAttemptt,
+                },
               },
-            }
-          ).then((user) =>
-            res.json({ msg: "Wrong", attemptsLeft: 2 - verificationAttemptt })
-          );
-        }
-      }
-    })
-    .catch((err) => res.json({ msg: "error finding user", err }));
+              { returnOriginal: false },
+              function (err, documents) {
+                res.json({msg: "Incorrect Pin.", attemptsLeft: verificationAttemptt})
+              }
+            )}}}}
+      )
+    .catch((err) => res.json({ msg: "user not founded", err }));
 };
+
+exports.loginAfterVerified = async (req, res) => {
+  const user = res.body.user
+  const payload = {
+    user
+  }
+  jwt.sign(payload, JWT_SECRET,
+    {
+      expiresIn: 31556925
+    },
+    (err, token) => {
+      res.json({
+        success: true,
+        token: "Bearer " + token,
+        user: user
+      });
+    }
+    )
+}
 
 exports.login = async (req, res) => {
   console.log("entered login() controller");
@@ -140,14 +177,14 @@ exports.signup = async (req, res) => {
     });
     bcrypt.genSalt(10, (err, salt) => {
       bcrypt.hash(newUser.password, salt, (err, hash) => {
-        if (err) throw err;
+        if(err) throw err;
         newUser.password = hash;
         let body =
           "Thank you for signing up with Juice Houston! Your code is " + vCode;
         client.messages
           .create({
             to: phone.toString(),
-            from: "8787896566",
+            from: twilioPhoneNumber,
             body: body,
           })
           .then((message) => {
@@ -159,12 +196,12 @@ exports.signup = async (req, res) => {
               })
               .catch((err) => {
                 console.log("err: " + err);
-                res.json({ msg: "error", err });
+                res.json({ msg: "error on saving user", err });
               });
           })
           .catch((err) => {
-            console.log("err: " + err);
-            res.json({ msg: "error", err: err.Error });
+            console.log("err with twilio: " + err);
+            res.json({ msg: "error with twilio", err: err.Error });
           });
       });
     });
