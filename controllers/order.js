@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
 const { json } = require("body-parser");
 const { getDrink } = require("./drink");
 const Stripe = require('stripe');
-const stripe = Stripe('pk_test_51JdrbbJhLWcBt73zLaa0UNkmKAAonyh9sRyrmkaMUgufzOeuvL4Vu9cNJcfdGykBSxkQPJOWkICvYoqw3r7q0AzD00Trf0E3aP');
+const stripe = Stripe('sk_test_51JdrbbJhLWcBt73zBQd9s8PqqVI6bEwXxQtYvhQ76RRFQbzLpp8rWsgXCFAA6S9yVz4XghTjvbmk30cwfiSOcyrV008BHc9z1w');
 
 const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
@@ -72,7 +72,7 @@ exports.placeOrder = async (req, res) => {
         drinks[j].order = order._id;
         var drink = new Drink(drinks[j]);
         drink.save(function (err, drinkSaved) {
-          if (err) {
+          if (err) { 
             console.log(err);
             /* const session = await stripe.checkout.sessions.create({
 
@@ -87,7 +87,7 @@ exports.placeOrder = async (req, res) => {
             return res.status(200).json({ err });
           }
         });
-      }
+      } 
       transporter.sendMail({
         from: '"Edward" <juicedhouston@gmail.com>', // sender address
         to: req.body.email, // list of receivers
@@ -132,13 +132,26 @@ exports.getUserOrders = async (req, res) => {
       if (err) {
         return res.status(500).json({ err });
       }
-      //console.log(docs)
-      docs[0].drinks.forEach(async (d, i) => {
-        const drink = await getDrinkk(d)
-        docs[0].drinks[i] = drink
-      })
+     // console.log(docs[0])
+      //docs[0].drinks.forEach(async (d, i) => {
+        //const drink = await getDrinkk(d)
+        //docs[0].drinks[i] = drink
+      //})
         console.log("jere");
         return res.status(200).json(docs);
     }
   );
+}; 
+
+exports.paymentIntent = async (req, res) => {
+  const { price } = req.body;
+  console.log("here in payment intent")
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: price,
+    currency: "usd",
+  });
+
+  res.send({
+    clientSecret: paymentIntent.client_secret,
+  });
 };
