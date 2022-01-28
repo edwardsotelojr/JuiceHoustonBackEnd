@@ -56,7 +56,7 @@ exports.verify = async (req, res) => {
               }}
             );
           }else {
-            console.log(verificationAttemptt)
+            console.log("verificationAttemptt: ", verificationAttemptt)
             User.updateOne(
               { "email": user.email },
               {

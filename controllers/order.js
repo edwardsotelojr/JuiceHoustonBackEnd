@@ -7,6 +7,7 @@ const Stripe = require('stripe');
 const stripe = Stripe('sk_test_51JdrbbJhLWcBt73zBQd9s8PqqVI6bEwXxQtYvhQ76RRFQbzLpp8rWsgXCFAA6S9yVz4XghTjvbmk30cwfiSOcyrV008BHc9z1w');
 
 const nodemailer = require('nodemailer');
+const { resolveContent } = require("nodemailer/lib/shared");
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -14,7 +15,7 @@ const transporter = nodemailer.createTransport({
     pass: 'fytqom-jiWdeh-cosxu6',
   },
 });
-transporter.verify().then(console.log).catch(console.error);
+transporter.verify().then().catch(console.error);
 
 
 exports.getIndex = async (req, res) => {
@@ -28,7 +29,7 @@ exports.getIndex = async (req, res) => {
     // Data returned as json so a fetch/axios requst can get it
     res.json(order);
   } catch (error) {
-    console.log(error);
+    console.log("ERROR: ", error);
   }
 };
 
@@ -105,42 +106,59 @@ exports.placeOrder = async (req, res) => {
 
 async function getDrinkk(drinkId) {
   const idd = new mongoose.Types.ObjectId(drinkId);
-  console.log(new Date)
+  //console.log(new Date)
   await Drink.findById(idd, function (err, docs) {
     if (err) {
       return { err };
     }
-    console.log("docs", docs, " " , new Date);
+   // console.log("\n docs: ", docs, " " , new Date);
     return docs;
   }); 
 };
 
 exports.getUserOrders = async (req, res) => {
-  var userId = req.query.user;
+  var userEmail = req.query.email;
+  var drinksArray = [];
+  var docsCopy = [];
+  var resSend = 0
   //console.log(userId)
   //console.log(new mongoose.Types.ObjectId(userId))
-  Order.estimatedDocumentCount(function (err, docs) {
-    if (err) {
-      console.log(err);
-      return;
-    } 
-    console.log(docs);
-  });
+
+  //let orders = await Order.find({email: userEmail})
+  //.populate("drinks")
   Order.find(
-    { user: new mongoose.Types.ObjectId(userId) },
+    { email: userEmail },
     async function (err, docs) {
       if (err) {
         return res.status(500).json({ err });
       }
-     // console.log(docs[0])
-      //docs[0].drinks.forEach(async (d, i) => {
-        //const drink = await getDrinkk(d)
-        //docs[0].drinks[i] = drink
-      //})
-        console.log("jere");
-        return res.status(200).json(docs);
+      docs.forEach((o,i) => {
+        docsCopy.push(o.toObject())
+        docsCopy[i]["drinkss"] = []
+      })
     }
-  );
+  ).then(
+    orders => {
+      var b = new Promise((resolve, reject) =>{
+        orders.forEach(async (o, i) => {
+        o.drinks.forEach(async (d, ii) => {
+          const drink = await Drink.findById(d._id, function (err, dri) {
+            if (err) {
+              return { err };
+            }
+            console.log("here")
+              docsCopy[i]["drinkss"][ii] = dri
+              if(i == orders.length-1 && ii == o.drinks.length-1) {return setTimeout(() => {resolve()}, 1000)
+              }
+          }); 
+        })
+      })
+      })
+      .then(()=> {
+        return res.send(docsCopy)
+           
+   })
+    })
 }; 
 
 exports.paymentIntent = async (req, res) => {
