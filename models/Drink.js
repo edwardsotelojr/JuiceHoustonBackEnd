@@ -7,6 +7,10 @@ const drinkSchema = mongoose.Schema(
       type: String,
       required: true,
     },
+    color: {
+      type: String,
+      required: true
+    },
     ingredients: {
       type: Object,
       required: true,
@@ -19,6 +23,9 @@ const drinkSchema = mongoose.Schema(
       type: Object,
       required: false,
     },
+    delivered: {
+      type: Boolean
+  },
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",

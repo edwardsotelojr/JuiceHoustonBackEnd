@@ -34,6 +34,12 @@ const orderSchema = mongoose.Schema({
         type: Number,
         required: true
     },
+    orderPlaced: {
+        type: String,
+    },
+    lastDay: {
+        type: String
+    },
     instructions:{
         type: String,
         required: false
@@ -48,7 +54,6 @@ const orderSchema = mongoose.Schema({
         type: Schema.Types.ObjectId, ref: 'User'
     }
 },   {
-    timestamps: true,
     collection: 'orders'
 });
 
