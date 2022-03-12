@@ -1,18 +1,24 @@
+require("dotenv").config();
 const { JWT_SECRET } = require("../keys.js");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const Stripe = require("stripe");
-const validation = require("../utils/validation");
+const {
+  validationSignup,
+  validationResetPassword,
+} = require("../utils/validation");
 const stripe = Stripe(
   "sk_test_51JdrbbJhLWcBt73zBQd9s8PqqVI6bEwXxQtYvhQ76RRFQbzLpp8rWsgXCFAA6S9yVz4XghTjvbmk30cwfiSOcyrV008BHc9z1w"
 );
-require("dotenv").config();
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 const client = require("twilio")(accountSid, authToken);
 const nodemailer = require("nodemailer");
+const {
+  TrustProductsEvaluationsPage,
+} = require("twilio/lib/rest/trusthub/v1/trustProducts/trustProductsEvaluations");
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -22,13 +28,14 @@ const transporter = nodemailer.createTransport({
     pass: "fytqom-jiWdeh-cosxu6",
   },
 });
+
 transporter.verify().then().catch(console.error);
 
 exports.verify = async (req, res) => {
   let pin = parseInt(req.body.pin);
   let userEmail = req.body.userEmail;
   var userPin;
-  console.log("here");
+  console.log("verify parameters: ", req.body);
   User.findOne({ email: userEmail })
     .then((user) => {
       if (user) {
@@ -52,7 +59,7 @@ exports.verify = async (req, res) => {
               (err, token) => {
                 res.json({
                   success: true,
-                  msg: "Pin matched",
+                  msg: "pin matched",
                   token: token,
                   user: userr,
                 });
@@ -68,7 +75,7 @@ exports.verify = async (req, res) => {
               if (err) {
                 res.json({ msg: "error to delete user", err });
               } else {
-                res.json({ msg: "user is deleted." });
+                res.json({ msg: "user is deleted" });
               }
             });
           } else {
@@ -84,13 +91,15 @@ exports.verify = async (req, res) => {
               { returnOriginal: false },
               function (err, documents) {
                 res.json({
-                  msg: "Incorrect Pin.",
+                  msg: "incorrect pin",
                   attemptsLeft: verificationAttemptt,
                 });
               }
             );
           }
         }
+      } else {
+        res.json({ msg: "user not founded" });
       }
     })
     .catch((err) => res.json({ msg: "user not founded", err }));
@@ -123,10 +132,13 @@ exports.login = async (req, res) => {
   let { email, password } = req.body;
   User.findOne({ email: email }).then((user) => {
     if (user === null) {
+      console.log("invalid");
       res.status(400).json({ msg: "invalid email" });
     } else if (user.verified == false) {
+      console.log("not verified");
       res.status(400).json({ msg: "user not verified" });
     } else {
+      console.log("match");
       bcrypt.compare(password, user.password).then((isMatch) => {
         if (isMatch) {
           // User matched
@@ -150,6 +162,7 @@ exports.login = async (req, res) => {
             }
           );
         } else {
+          console.log("incorrect");
           return res.status(400).json({ msg: "Password incorrect" });
         }
       });
@@ -165,7 +178,6 @@ getVerificationCode = () => {
     fourCode.push(Math.floor(Math.random() * 9) + 1);
     code = code + fourCode[i].toString();
   }
-  console.log(parseInt(code));
   return parseInt(code);
 };
 
@@ -182,7 +194,7 @@ exports.signup = async (req, res) => {
     instructions,
     termsOfAgreement,
   } = req.body;
-  const v = validation(
+  const v = validationSignup(
     email,
     name,
     password,
@@ -279,7 +291,7 @@ exports.edit = async (req, res) => {
     suiteNumber,
     instructions
   );
-  
+
   if (v.status == 500) {
     console.log("failed", v.msg);
     return res.status(500).json({ msg: v.msg });
@@ -293,7 +305,7 @@ exports.edit = async (req, res) => {
           console.log("err: ", err);
         } else if (updatedUser) {
           const payload = {
-            updatedUser
+            updatedUser,
           };
           console.log(`Successfully updated document: ${updatedUser}.`);
           jwt.sign(
@@ -303,84 +315,128 @@ exports.edit = async (req, res) => {
               expiresIn: 31556926, // 1 year in seconds
             },
             (err, token) => {
-              console.log("token: ", token)
+              console.log("token: ", token);
               res.json({
                 success: true,
                 token: "Bearer " + token,
                 user: updatedUser,
               });
-            })
+            }
+          );
         }
       }
     );
   }
 };
-/* 
-const signup = async (req, res) => {
-  console.log(req)
-    try {
-        const payload = req.body;
-        const token = await UserServices.signInUser(payload);
-        res.status(200).json({
-          success: true,
-          data: savedUser,
+
+exports.resetPassword = async (req, res) => {
+  console.log("32");
+  const { email, password, newPassword } = req.body;
+  if (validationResetPassword(newPassword)) {
+    User.findOne({ email: email })
+      .then((user) => {
+        bcrypt.compare(password, user.password).then((isMatch) => {
+          if (isMatch) {
+            bcrypt.genSalt(10, (err, salt) => {
+              if (err) {console.log("err"); throw err;}
+              bcrypt.hash(newPassword, salt, (errors, hash) => {
+                if (err) {console.log("error"); throw errors;}
+                User.updateOne({ email: email }, { password: hash })
+                  .then((r) => {
+                    console.log("new password saved");
+                    res
+                      .status(200)
+                      .json({ error: false, msg: "password updated" });
+                  })
+                  .catch((error) => {
+                    console.log("error on updateOne: ", error);
+                    res.status(200).json({ error: true, msg: "error" });
+                  });
+              });
+            });
+          } else {
+            console.log("incorrect current password ");
+            res
+              .status(200)
+              .json({ error: true, msg: "incorrect current password" });
+          }
         });
-      } catch (error) {
-        console.log(error);
-        next(new Error(error.message));
-      }    
+      })
+      .catch((error) => {
+        console.log("error on find one: ", error);
+        res.status(200).json({ error: true, msg: "error" });
+      });
+  } else {
+    console.log("invalid new pasword")
+    res.status(200).json({
+      error: true,
+      msg: "invalid new password",
+    });
+  }
 };
 
-const editUser = (req, res) => {
-  console.log(req.params)
-  User.findByIdAndUpdate(req.params._id, {
-    $set: req.body
-  }, (error, data) => {
-    if (error) {
-      return next(error);
-      console.log(error)
-    } else {
-      res.json(data)
-      console.log('User updated successfully !')
-    }
-  })
-}
-
- const signin = (req, res) => {
-
-   const email = req.body.email;
-   const password = req.body.password;
-
-   User.findOne({email})
-   .then(user => {
-     if(!user){
-       return res.status(404).json({emailnotfound: "Email not found"});
-      }
-      bcrypt.compare(password, user.password)
-      .then(isMatch => {
-        if(isMatch){
-          const payload = {
-            id: user.id,
-            name: user.name
-          };
-          jwt.sign(
-            payload,
-            JWT_SECRET,
-            {
-              expiresIn: 31556926
-            },
-            (err, token) => {
-              res.json({
-                success: true,
-                token: "Bearer: " + token
-              });
-            } 
-          );
-        } else {
-          return res
-          .status(400)
-          .json({passwordincorrect: "Password incorrect"});
-        }
-      });
+const setPassword = (email, password) => {
+  bcrypt.genSalt(10, (err, salt) => {
+    if (err) throw err;
+    bcrypt.hash(password, salt, (errors, hash) => {
+      if (err) throw errors;
+      User.updateOne({ email: email }, { password: hash })
+        .then((r) => {
+          console.log("new password saved");
+          return r
+        })
+        .catch((error) => {
+          console.log("error on updateOne: ", error);
+          return error
+        });
     });
-}; */
+  });
+};
+
+const randomPassword = () => {
+  var text = "";
+
+  var charset = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+  for (var i = 0; i < 8; i++)
+    text += charset.charAt(Math.floor(Math.random() * charset.length));
+
+  return text;
+};
+exports.sendTemporaryPassword = async (req, res) => {
+  const r = randomPassword();
+  const email = req.body.email;
+  const phone = req.body.phone;
+  const text = "Your new password for juice houston is " + r;
+  const emailText = "Your new password for juice houston is " + r;
+  client.messages
+    .create({
+      to: phone.toString(),
+      from: twilioPhoneNumber.toString(),
+      body: text,
+    })
+    .then((message) => {
+      console.log("sid: " + message.sid);
+      transporter
+        .sendMail({
+          from: '"Edward" <juicedhouston@gmail.com>', // sender address
+          to: email, // list of receivers
+          subject: "New Password", // Subject line
+          text: emailText, // plain text body
+        })
+        .then((info) => {
+          console.log({ info });
+          const setPasswordReturn = setPassword(email, r)
+          console.log(setPasswordReturn)
+          res.status(200).json({msg: "temporary password sent"})
+        })
+        .catch((error) => {
+          res.status(500).json({ msg: "error with mailer" });
+        });
+    })
+    .catch((err) => {
+      console.log("err with twilio: " + err);
+      res.status(500).json({ msg: "error with twilio" });
+
+    });
+};

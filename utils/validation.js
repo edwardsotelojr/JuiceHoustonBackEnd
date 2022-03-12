@@ -4,12 +4,14 @@ const zipcodes = [
     77040, 77042, 77050, 77054, 77055, 77057, 77063, 77076, 77080, 77087, 77088,
     77091, 77092, 77093, 77096, 77098, 77201, 77401,
   ];
-   module.exports = function validation(email, name, password, phone, 
+   module.exports = 
+   {
+        validationSignup(email, name, password, phone, 
     address, zipcode, gateCode,
      suiteNumber, instructions, termsOfAgreement){
     if(name.length < 1 || name.length > 15){
-       return {status: 500, msg: "Name length is not valid. Must be 1-15 characters long."
-    }        }     
+       return {status: 500, msg: "Name length is not valid. Must be 1-15 characters long."}
+    }     
     if(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)){
         //valid
     }
@@ -49,11 +51,12 @@ const zipcodes = [
         return {status: 500, msg: "Terms of Agreements was not acknowledged."}
     }
     return {status: 200, msg: "valid"}
-} 
+},
 
-module.exports = function validation(name, phone, 
+ validation(name, phone, 
     address, zipcode, gateCode,
      suiteNumber, instructions){
+
     if(name.length < 1 || name.length > 15){
        return {status: 500, msg: "Name length is not valid. Must be 1-15 characters long."}        
     }   
@@ -83,12 +86,12 @@ module.exports = function validation(name, phone,
         return {status: 500, msg: "instructions too long for storage. No more than 120 Characters"}
     }
     return {status: 200, msg: "valid"}
-} 
+},
 
-module.exports = function validateOrder (name, email, phone, address, zipcode, gateCode,
+validateOrder (name, email, phone, address, zipcode, gateCode,
      suiteNumber, instructions, agreement, card) {
         if(name.length < 1 || name.length > 15){
-            return {status: 500, msg: "Name length is not valid. Must be 1-15 characters long."}        
+            return {status: 500, msg: "naName length is not valid. Must be 1-15 characters long."}        
          }   
          if(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)){
             //valid
@@ -122,4 +125,13 @@ module.exports = function validateOrder (name, email, phone, address, zipcode, g
              return {status: 500, msg: "instructions too long for storage. No more than 120 Characters"}
          }
          return {status: 200, msg: "valid"}
+},
+    validationResetPassword(password){
+    if(password.length >= 6 && password.length <= 20){
+        return true
+    }
+    return false
 }
+   }
+
+  
