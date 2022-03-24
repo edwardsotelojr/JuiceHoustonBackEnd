@@ -29,7 +29,7 @@ mongoose.connect(MONGO_URI, {
   console.log("Mongoose Connected. ");
 })
 .catch(err => console.log(err));
-
+require('./models/Drink');
 app.use(passport.initialize());
 app.use(passport.session());
 app.use('/', routes);

@@ -11,7 +11,7 @@ router.patch('/verify', verify);
 router.post('/loginAfterVerified', loginAfterVerified)
 router.patch('/edit/:_id', edit);
 router.post('/placeOrder', placeOrder);
-router.get('/orders/', getUserOrders);
+router.get('/orders', getUserOrders);
 router.post("/create-payment-intent", paymentIntent);
 router.get('/drink/', getDrink);
 router.patch('/drinkDelivered/', drinkDelivered)

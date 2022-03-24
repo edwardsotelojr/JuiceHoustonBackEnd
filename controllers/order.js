@@ -1,8 +1,7 @@
+
+const mongoose = require("mongoose");
 const Order = require("../models/Order");
 const Drink = require("../models/Drink");
-const mongoose = require("mongoose");
-const { json } = require("body-parser");
-const { getDrink } = require("./drink");
 const Stripe = require("stripe");
 const stripe = Stripe(
   "sk_test_51JdrbbJhLWcBt73zBQd9s8PqqVI6bEwXxQtYvhQ76RRFQbzLpp8rWsgXCFAA6S9yVz4XghTjvbmk30cwfiSOcyrV008BHc9z1w"
@@ -36,7 +35,7 @@ getPlaceDateOrder = () => {
   }
   return orderPlacedDate;
 };
-
+ 
 getLastDeliveryDate = (date) => {
   lastDay = moment.tz(date, 'MM/DD/YYYY', true, "America/Chicago").add(7, 'days').format("MM/DD/YYYY")
   return lastDay
@@ -200,58 +199,25 @@ exports.placeOrder = async (req, res) => {
   }) 
 };
 
+function sleep(ms){
+  return new Promise(resolve => setTimeout(resolve, ms))
+}  
+
 async function getDrinkk(drinkId) {
   const idd = new mongoose.Types.ObjectId(drinkId);
   //console.log(new Date)
-  await Drink.findById(idd, function (err, docs) {
-    if (err) {
-      return { err };
-    }
-    // console.log("\n docs: ", docs, " " , new Date);
-    return docs;
-  });
+   await Drink.findById(idd)
+   .then(doc => {console.log(doc); return doc})
 }
 
 exports.getUserOrders = async (req, res) => {
   var userEmail = req.query.email;
-  var drinksArray = [];
-  var docsCopy = [];
-  var resSend = 0;
-  //console.log(new mongoose.Types.ObjectId(userId))
-
-  //let orders = await Order.find({email: userEmail})
-  //.populate("drinks")
-  Order.find({ email: userEmail }, async function (err, docs) {
-    if (err) {
-      return res.status(500).json({ err });
-    }
-    console.log(docs)
-    if(docs.length == 0) return res.send([])
-    docs.forEach((o, i) => {
-      docsCopy.push(o.toObject());
-      docsCopy[i]["drinkss"] = [];
-    });
-  }).then((orders) => {
-    var b = new Promise((resolve, reject) => {
-      orders.forEach(async (o, i) => {
-        o.drinks.forEach(async (d, ii) => {
-          const drink = await Drink.findById(d._id, function (err, dri) {
-            if (err) {
-              return { err };
-            }
-            console.log("here");
-            docsCopy[i]["drinkss"][ii] = dri;
-            if (i == orders.length - 1 && ii == o.drinks.length - 1) {
-              return setTimeout(() => {
-                resolve();
-              }, 1000);
-            }
-          });
-        });
-      });
-    }).then(() => {
-      return res.send(docsCopy);
-    });
+    //console.log(new mongoose.Types.ObjectId(userId))
+  Order.find({email: userEmail})
+  .populate("drinks")
+  .exec(function (err, orders) {
+    if (err) return console.log(err);
+    res.status(200).json({orders});
   });
 };
 
