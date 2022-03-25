@@ -26,3 +26,15 @@ exports.getDrink = async (req, res) => {
            return res.send("delivered")
      })
   }
+
+  exports.updateDrink = async (req, res) => {
+      const drinkId = req.body.drinkId
+      const date = req.body.deliveryDate
+      Drink.findByIdAndUpdate({_id: drinkId}, { $set: {"deliveryDate": date}},
+      function (err, docs) {
+          if(err){
+              return res.status(500).json({err})
+          } 
+           return res.send("success")
+     })
+  }
