@@ -1,31 +1,24 @@
-require("dotenv").config();
-const { JWT_SECRET } = require("../keys.js");
+require('dotenv').config()
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
-const Stripe = require("stripe");
 const {
   validationSignup,
   validationResetPassword,
+  validation
 } = require("../utils/validation");
-const stripe = Stripe(
-  "sk_test_51JdrbbJhLWcBt73zBQd9s8PqqVI6bEwXxQtYvhQ76RRFQbzLpp8rWsgXCFAA6S9yVz4XghTjvbmk30cwfiSOcyrV008BHc9z1w"
-);
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 const client = require("twilio")(accountSid, authToken);
 const nodemailer = require("nodemailer");
-const {
-  TrustProductsEvaluationsPage,
-} = require("twilio/lib/rest/trusthub/v1/trustProducts/trustProductsEvaluations");
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
   secure: true,
   auth: {
-    user: "juicedhouston@gmail.com",
-    pass: "fytqom-jiWdeh-cosxu6",
+    user: process.env.GMAIL_EMAIL,
+    pass: process.env.GMAIL_PASSWORD,
   },
 });
 
@@ -52,7 +45,7 @@ exports.verify = async (req, res) => {
             delete userr.verificationAttempt;
             jwt.sign(
               { user: userr },
-              JWT_SECRET,
+              process.env.JWT_SECRET,
               {
                 expiresIn: 31556925,
               },
@@ -113,7 +106,7 @@ exports.loginAfterVerified = async (req, res) => {
   };
   jwt.sign(
     payload,
-    JWT_SECRET,
+    proces.env.JWT_SECRET,
     {
       expiresIn: 31556925,
     },
@@ -138,7 +131,7 @@ exports.login = async (req, res) => {
       console.log("not verified");
       res.status(400).json({ msg: "user not verified" });
     } else {
-      console.log("match");
+      console.log("match", process.env.JWT_SECRET);
       bcrypt.compare(password, user.password).then((isMatch) => {
         if (isMatch) {
           // User matched
@@ -149,7 +142,7 @@ exports.login = async (req, res) => {
           // Sign token
           jwt.sign(
             payload,
-            JWT_SECRET,
+            process.env.JWT_SECRET,
             {
               expiresIn: 31556926, // 1 year in seconds
             },
@@ -310,7 +303,7 @@ exports.edit = async (req, res) => {
           console.log(`Successfully updated document: ${updatedUser}.`);
           jwt.sign(
             payload,
-            JWT_SECRET,
+            process.env.JWT_SECRET,
             {
               expiresIn: 31556926, // 1 year in seconds
             },

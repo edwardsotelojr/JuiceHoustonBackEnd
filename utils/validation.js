@@ -4,6 +4,7 @@ const zipcodes = [
     77040, 77042, 77050, 77054, 77055, 77057, 77063, 77076, 77080, 77087, 77088,
     77091, 77092, 77093, 77096, 77098, 77201, 77401,
   ];
+
    module.exports = 
    {
         validationSignup(email, name, password, phone, 

@@ -1,7 +1,7 @@
 renderIngredients = (ingredients) => {
     var str = "";
     for (const [key, value] of Object.entries(ingredients)) {
-                str = str + "<p>" + key + ": " + value + " oz</p>"
+                str = str + "<p style='margin-bottom: 3px'>" + key + ": " + value + " oz</p>"
     }
     return str
 }
@@ -20,9 +20,9 @@ drinksHtml = (drinks) => {
           background-color: " + drinks[i].color + ";\
         '\
       >\
-        <p style='margin: 2px'>delivery date: " + drinks[i].deliveryDate + "</p>\
+        <p style='margin: 2px'>Delivery Date: " + drinks[i].deliveryDate + "</p>\
         " + renderIngredients(drinks[i].ingredients) + "\
-        <p style='margin: 2px'>$" + String(Number(drinks[i].total).toFixed(2)) + "</p>\
+        <p style='margin: 2px'>$" + String(Number(drinks[i].price).toFixed(2)) + "</p>\
       </div>\
      "
     }
@@ -42,7 +42,7 @@ exports.receiptHtml = (user, drinks, total) => {
     return("  <div style='background-color: rgb(123, 182, 4);'>\
   <div style=' margin-top: 7px; '>\
     <h1 style=' padding-top: 7px; margin-bottom: 0;text-align: center; font-family: \"Arial Narrow\", Arial, sans-serif; font-size: 25px;margin-bottom: 5px; '>\
-      thank you " + user.name + ", for trying juice houston!\
+      Thank you " + user.name + ", for trying Juice Houston!\
     </h1>\
     <p style='text-align: center; margin: 3px'>address: " + user.address + ", " + user.zipcode + "</p>\
     <p style='text-align: center; margin: 3px'>phone: " + String(user.phone) + ", " + "</p>" + ifInstructions(user.instructions) + "\
@@ -50,7 +50,7 @@ exports.receiptHtml = (user, drinks, total) => {
     <div style='justify-content: center; display: flex; flex-wrap: wrap '>\
     " + drinksHtml(drinks) + "\
     </div>\
-    <p style='text-align: center; margin: 5px; padding-bottom: 10px;'>total: $" + String(Number(total).toFixed(2)) + "</p>\
+    <p style='text-align: center; margin: 3px; padding-bottom: 10px;'>total: $" + String(Number(total).toFixed(2)) + "</p>\
   </div>\
   </div>"
     )

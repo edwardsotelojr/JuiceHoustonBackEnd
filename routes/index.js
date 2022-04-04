@@ -17,6 +17,5 @@ router.get('/drink/', getDrink);
 router.patch('/drinkDelivered/', drinkDelivered)
 router.patch('/resetPassword', resetPassword)
 router.patch('/sendTemporaryPassword', sendTemporaryPassword)
-router.get('/orderReceipt', orderReceipt)
 router.patch('/updateDrink', updateDrink)
 module.exports = router;
