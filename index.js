@@ -7,12 +7,14 @@ const app = express();
 const PORT = 8000;
 const passport = require("passport");
 const cors = require('cors')
+const path = require("path")
 app.use(cors())
 app.use(
   bodyParser.urlencoded({
     extended: false
   })
 );
+app.use(express.static(path.join(__dirname, "client/build")))
 //middlewares
 app.use(bodyParser.json());
 mongoose.connect(process.env.MONGO_URI, {
