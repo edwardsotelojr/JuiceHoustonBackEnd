@@ -3,10 +3,19 @@ const routes = require("./routes/");
 const bodyParser = require("body-parser")
 const express = require("express");
 const mongoose = require("mongoose");
+require('./models/Drink');
+const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
 const PORT = process.env.PORT;
 const passport = require("passport");
 const cors = require('cors')
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+}).then(() => {
+  console.log("Mongoose Connected. ");
+}).catch(err => {
+  console.log("error mongoose: ", err)
+})
 app.use(cors())
 app.use(
   bodyParser.urlencoded({
@@ -15,16 +24,6 @@ app.use(
 );
 //middlewares
 app.use(bodyParser.json());
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useCreateIndex: true,
-  useUnifiedTopology: true,
-  useFindAndModify: false
-}).then(() => {
-  console.log("Mongoose Connected. ");
-})
-.catch(err => console.log(err));
-require('./models/Drink');
 app.use(passport.initialize());
 app.use(passport.session());
 app.use('/', routes);
