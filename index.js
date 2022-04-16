@@ -9,6 +9,7 @@ const app = express();
 const PORT = process.env.PORT;
 const passport = require("passport");
 const cors = require('cors')
+
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
 }).then(() => {

@@ -5,6 +5,7 @@ const Order = require("../models/Order");
 const Drink = require("../models/Drink");
 const Stripe = require("stripe");
 const stripe = Stripe(process.env.STRIPE_KEY);
+
 const moment = require("moment-timezone");
 const nodemailer = require("nodemailer");
 const {receiptHtml} = require('../utils/receiptHtml')
@@ -172,6 +173,7 @@ exports.paymentIntent = async (req, res) => {
     amount: price,
     currency: "usd",
   });
+  console.log("secret: " + paymentIntent.client_secret)
   res.send({
     clientSecret: paymentIntent.client_secret,
   });

@@ -131,7 +131,6 @@ exports.login = async (req, res) => {
       console.log("not verified");
       res.status(400).json({ msg: "user not verified" });
     } else {
-      console.log("match", process.env.JWT_SECRET);
       bcrypt.compare(password, user.password).then((isMatch) => {
         if (isMatch) {
           // User matched

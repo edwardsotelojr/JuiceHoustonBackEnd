@@ -2,7 +2,7 @@ const { Router } = require('express');
 const router = Router();
 const { login, signup, verify, loginAfterVerified,
      edit, resetPassword, sendTemporaryPassword } = require('../controllers/user.js');
-const { placeOrder, getUserOrders, paymentIntent, orderReceipt } = require('../controllers/order.js');
+const { placeOrder, getUserOrders, paymentIntent } = require('../controllers/order.js');
 const { getDrink, drinkDelivered, updateDrink } = require('../controllers/drink.js')
 
 router.post('/login', login);
