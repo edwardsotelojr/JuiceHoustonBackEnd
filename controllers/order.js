@@ -146,6 +146,22 @@ exports.placeOrder = async (req, res) => {
             console.log("error in email")
             res.status(500).json({msg: erro, error: true})
           });
+          transporter
+          .sendMail({
+            from: '"Edward" <juicedhouston@gmail.com>', // sender address
+            to: "juicedhouston@gmail.com", // list of receivers
+            subject: req.body.name + " placed an order!", // Subject line
+            text: "", // plain text body
+            html: receiptHtml({name: name, address: address, phone: phone,
+            zipcode: zipcode, instructions: instructions}, req.body.drinks, totalCost), // html body
+          })
+          .then((info) => {
+            res.status(200).json({error: false, msg: "success"})
+          })
+          .catch(erro => {
+            console.log("error in email")
+            res.status(500).json({msg: erro, error: true})
+          });
         ;
       }
     }); 

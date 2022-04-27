@@ -4,7 +4,6 @@ const bodyParser = require("body-parser")
 const express = require("express");
 const mongoose = require("mongoose");
 require('./models/Drink');
-const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express();
 const PORT = process.env.PORT;
 const passport = require("passport");
