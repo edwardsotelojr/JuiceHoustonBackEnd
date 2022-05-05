@@ -10,8 +10,8 @@ const zipcodes = [
         validationSignup(email, name, password, phone, 
     address, zipcode, gateCode,
      suiteNumber, instructions, termsOfAgreement){
-    if(name.length < 1 || name.length > 15){
-       return {status: 500, msg: "Name length is not valid. Must be 1-15 characters long."}
+    if(name.length <= 1 || name.length > 25){
+       return {status: 500, msg: "Name length is not valid. Must be 1-25 characters long."}
     }     
     if(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)){
         //valid
@@ -46,7 +46,7 @@ const zipcodes = [
         return {status: 500, msg: "Suite # is oddly too long..."}
     }
     if(instructions.length > 120){
-        return {status: 500, msg: "instructions too long for storage. No more than 120 Characters"}
+        return {status: 500, msg: "Instructions too long for storage. No more than 120 Characters"}
     }
     if(termsOfAgreement == false){
         return {status: 500, msg: "Terms of Agreements was not acknowledged."}
@@ -84,15 +84,15 @@ const zipcodes = [
         return {status: 500, msg: "Suite # is oddly too long..."}
     }
     if(instructions.length > 120){
-        return {status: 500, msg: "instructions too long for storage. No more than 120 Characters"}
+        return {status: 500, msg: "Instructions too long for storage. No more than 120 Characters"}
     }
     return {status: 200, msg: "valid"}
 },
 
 validateOrder (name, email, phone, address, zipcode, gateCode,
      suiteNumber, instructions, agreement, card) {
-        if(name.length < 1 || name.length > 15){
-            return {status: 500, msg: "naName length is not valid. Must be 1-15 characters long."}        
+        if(name.length <= 1 || name.length > 25){
+            return {status: 500, msg: "Name length is not valid. Must be 1-25 characters long."}        
          }   
          if(/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(email)){
             //valid
@@ -123,7 +123,7 @@ validateOrder (name, email, phone, address, zipcode, gateCode,
              return {status: 500, msg: "Suite # is oddly too long..."}
          }
          if(instructions.length > 120){
-             return {status: 500, msg: "instructions too long for storage. No more than 120 Characters"}
+             return {status: 500, msg: "Instructions too long for storage. No more than 120 Characters"}
          }
          return {status: 200, msg: "valid"}
 },
